@@ -1,0 +1,53 @@
+# -------------------------------
+# Node / JS dependencies
+# -------------------------------
+/node_modules/
+/npm-debug.log*
+/yarn-error.log*
+/pnpm-lock.yaml
+/.parcel-cache/
+
+# -------------------------------
+# Composer / PHP dependencies
+# -------------------------------
+/vendor/
+/composer.lock
+
+# -------------------------------
+# Drupal files & cache
+# -------------------------------
+/web/sites/default/files/
+/web/sites/default/settings.php
+/web/sites/default/services.yml
+
+# Twig / PHP cache
+/web/sites/default/files/php/twig/
+
+# Drupal temporary files
+/web/sites/default/files/js/
+/web/sites/default/files/css/
+/web/sites/default/files/private/
+/web/sites/default/files/temp/
+/web/sites/default/files/translations/
+/web/sites/default/files/styles/
+/web/sites/default/files/php/twig/
+
+# -------------------------------
+# OS / Editor / IDE files
+# -------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.idea/
+*.vscode/
+*.phpstorm.meta.php
+*.iml
+*.log
+
+# -------------------------------
+# Environment / local overrides
+# -------------------------------
+.env
+.env.local
+.env.*.local
