@@ -1,0 +1,8 @@
+register_for_events:
+  title: 'Register for events'
+  description: 'Allow users to register for events.'
+
+administer event registration:
+  title: 'Administer event registration'
+  description: 'Manage event configuration.'
+  restrict access: true
