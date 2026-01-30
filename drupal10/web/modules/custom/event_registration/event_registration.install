@@ -1,0 +1,124 @@
+<?php
+
+/**
+ * Tell Drupal about the database tables.
+ */
+function event_registration_schema() {
+  $schema = [];
+
+  // Event table (existing)
+  $schema['event_registration_event'] = [
+    'description' => 'Stores event details',
+    'fields' => [
+      'id' => [
+        'description' => 'Event ID',
+        'type' => 'serial',   // Auto-increment
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'event_name' => [
+        'description' => 'Event name',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'event_category' => [
+        'description' => 'Category',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ],
+      'event_date' => [
+        'description' => 'Event date',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+      ],
+      'registration_start' => [
+        'description' => 'Start of registration',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+      ],
+      'registration_end' => [
+        'description' => 'End of registration',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'description' => 'Timestamp when created',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => ['id'],
+  ];
+
+  // Registration table (new)
+  $schema['event_registration_user'] = [
+    'description' => 'Stores users registering for events',
+    'fields' => [
+      'id' => [
+        'description' => 'Registration ID',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'event_id' => [
+        'description' => 'Related event ID',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'user_name' => [
+        'description' => 'Name of the user',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'user_email' => [
+        'description' => 'Email of the user',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'registered_on' => [
+        'description' => 'Timestamp of registration',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'event_id_idx' => ['event_id'],
+    ],
+  ];
+
+  return $schema;
+}
+
+
+/**
+ * Implements hook_install().
+ *
+ * This runs once when the module is enabled for the first time.
+ * Here we insert a sample event as default data.
+ */
+function event_registration_install() {
+  // Insert a sample event.
+  \Drupal::database()->insert('event_registration_event')
+    ->fields([
+      'event_name' => 'Sample Event',
+      'event_category' => 'Workshop',
+      'event_date' => '2026-02-15',
+      'registration_start' => '2026-02-01',
+      'registration_end' => '2026-02-10',
+      'created' => \Drupal::time()->getCurrentTime(),
+    ])
+    ->execute();
+}

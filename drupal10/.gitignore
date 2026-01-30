@@ -11,26 +11,13 @@
 # Composer / PHP dependencies
 # -------------------------------
 /vendor/
-/composer.lock
 
 # -------------------------------
 # Drupal files & cache
 # -------------------------------
-/web/sites/default/files/
+/web/sites/*/files/
 /web/sites/default/settings.php
 /web/sites/default/services.yml
-
-# Twig / PHP cache
-/web/sites/default/files/php/twig/
-
-# Drupal temporary files
-/web/sites/default/files/js/
-/web/sites/default/files/css/
-/web/sites/default/files/private/
-/web/sites/default/files/temp/
-/web/sites/default/files/translations/
-/web/sites/default/files/styles/
-/web/sites/default/files/php/twig/
 
 # -------------------------------
 # OS / Editor / IDE files
@@ -39,8 +26,8 @@
 Thumbs.db
 *.swp
 *.swo
-*.idea/
-*.vscode/
+.idea/
+.vscode/
 *.phpstorm.meta.php
 *.iml
 *.log
