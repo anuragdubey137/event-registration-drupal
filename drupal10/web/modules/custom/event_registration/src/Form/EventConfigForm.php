@@ -82,15 +82,22 @@ class EventConfigForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-    // Minimal logging to avoid crashing
-    \Drupal::logger('event_registration')->notice('Event submitted: @event (@category)', [
-      '@event' => $form_state->getValue('event_name'),
-      '@category' => $form_state->getValue('event_category'),
-    ]);
+public function submitForm(array &$form, FormStateInterface $form_state) {
+  $database = \Drupal::database();
 
-    // Show the green confirmation message
-    \Drupal::messenger()->addMessage($this->t('Event saved successfully.'));
-  }
+  $database->insert('event_registration_event')
+    ->fields([
+      'event_name' => $form_state->getValue('event_name'),
+      'event_category' => $form_state->getValue('event_category'),
+      'event_date' => $form_state->getValue('event_date'),
+      'registration_start' => $form_state->getValue('registration_start'),
+      'registration_end' => $form_state->getValue('registration_end'),
+      'created' => \Drupal::time()->getRequestTime(),
+    ])
+    ->execute();
+
+  \Drupal::messenger()->addStatus($this->t('Event saved successfully.'));
+}
+
 
 }
