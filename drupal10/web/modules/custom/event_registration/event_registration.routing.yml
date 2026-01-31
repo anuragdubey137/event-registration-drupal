@@ -13,3 +13,11 @@ event_registration.list:
     _title: 'Event Registration System'
   requirements:
     _permission: 'administer site configuration'
+
+event_registration.register_form:
+  path: '/event-register'
+  defaults:
+    _title: 'Register for Event'
+    _form: '\Drupal\event_registration\Form\EventRegisterForm'
+  requirements:
+    _permission: 'access content'
