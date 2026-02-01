@@ -12,7 +12,7 @@ event_registration.list:
     _controller: '\Drupal\event_registration\Controller\EventListController::list'
     _title: 'Event Registration System'
   requirements:
-    _permission: 'administer site configuration'
+    _permission: 'administer event registration'
 
 event_registration.register_form:
   path: '/event-register'
@@ -20,4 +20,12 @@ event_registration.register_form:
     _title: 'Register for Event'
     _form: '\Drupal\event_registration\Form\EventRegisterForm'
   requirements:
-    _permission: 'access content'
+    _permission: 'register_for_events'
+
+event_registration.registration_list:
+  path: '/admin/content/event-registrations'
+  defaults:
+    _controller: '\Drupal\event_registration\Controller\EventRegistrationListController::list'
+    _title: 'Event Registrations'
+  requirements:
+    _permission: 'administer event registration'

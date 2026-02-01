@@ -99,5 +99,4 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
   \Drupal::messenger()->addStatus($this->t('Event saved successfully.'));
 }
 
-
 }
