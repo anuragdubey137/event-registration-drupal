@@ -6,30 +6,20 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Database\Database;
 
-/**
- * Form for users to register for events.
- */
 class EventRegisterForm extends FormBase {
 
-  /**
-   * {@inheritdoc}
-   */
   public function getFormId() {
     return 'event_register_form';
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    // Fetch events from database
     $connection = Database::getConnection();
-    $query = $connection->select('event_registration_event', 'e')
+    $events = $connection->select('event_registration_event', 'e')
       ->fields('e', ['id', 'event_name'])
-      ->orderBy('event_name', 'ASC');
-    $events = $query->execute()->fetchAllKeyed();
+      ->orderBy('event_name', 'ASC')
+      ->execute()
+      ->fetchAllKeyed();
 
-    // Event dropdown
     $form['event'] = [
       '#type' => 'select',
       '#title' => $this->t('Select Event'),
@@ -37,21 +27,18 @@ class EventRegisterForm extends FormBase {
       '#required' => TRUE,
     ];
 
-    // Name field
     $form['name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Your Name'),
       '#required' => TRUE,
     ];
 
-    // Email field
     $form['email'] = [
       '#type' => 'email',
       '#title' => $this->t('Your Email'),
       '#required' => TRUE,
     ];
 
-    // Submit button
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Register'),
@@ -60,13 +47,8 @@ class EventRegisterForm extends FormBase {
     return $form;
   }
 
-  /**
-   * {@inheritdoc}
-   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $connection = Database::getConnection();
-
-    // Insert submission into registration table
     $connection->insert('event_registration_registration')
       ->fields([
         'event_id' => $form_state->getValue('event'),
@@ -78,5 +60,4 @@ class EventRegisterForm extends FormBase {
 
     $this->messenger()->addMessage($this->t('You have successfully registered for the event.'));
   }
-
 }
