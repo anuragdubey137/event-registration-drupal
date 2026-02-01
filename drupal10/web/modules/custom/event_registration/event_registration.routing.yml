@@ -1,15 +1,53 @@
+# Admin configuration form
 event_registration.admin_form:
   path: '/admin/event-registration'
   defaults:
-    _title: 'Event Configuration'
     _form: '\Drupal\event_registration\Form\EventConfigForm'
+    _title: 'Event Configuration'
   requirements:
     _permission: 'administer event registration'
 
-event_registration.list:
+# List all events (admin)
+event_registration.event_list:
   path: '/admin/content/events'
   defaults:
     _controller: '\Drupal\event_registration\Controller\EventListController::list'
-    _title: 'Event Registration System'
+    _title: 'Events'
   requirements:
-    _permission: 'administer site configuration'
+    _permission: 'administer event registration'
+
+# Event registration form (public)
+event_registration.register_form:
+  path: '/event-register'
+  defaults:
+    _form: '\Drupal\event_registration\Form\EventRegisterForm'
+    _title: 'Register for Event'
+  requirements:
+    _permission: 'register_for_events'
+
+# List all registrations (admin)
+event_registration.registration_list:
+  path: '/admin/content/event-registrations'
+  defaults:
+    _controller: '\Drupal\event_registration\Controller\EventRegistrationListController::list'
+    _title: 'Event Registrations'
+  requirements:
+    _permission: 'administer event registration'
+
+# Edit registration
+event_registration.edit:
+  path: '/admin/content/event-registration/{registration}/edit'
+  defaults:
+    _form: '\Drupal\event_registration\Form\EventRegistrationEditForm'
+    _title: 'Edit Registration'
+  requirements:
+    _permission: 'administer event registration'
+
+# Delete registration
+event_registration.delete:
+  path: '/admin/content/event-registration/{registration}/delete'
+  defaults:
+    _form: '\Drupal\event_registration\Form\EventRegistrationDeleteForm'
+    _title: 'Delete Registration'
+  requirements:
+    _permission: 'administer event registration'
