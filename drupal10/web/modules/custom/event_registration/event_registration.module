@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * Implements hook_mail().
+ */
+function event_registration_mail($key, &$message, $params) {
+  $message['headers']['Content-Type'] = 'text/html; charset=UTF-8';
+
+  switch ($key) {
+
+    case 'user_confirmation':
+      $message['subject'] = t('Event Registration Confirmation');
+      $message['body'][] = [
+        '#type' => 'markup',
+        '#markup' => $params['message'],
+      ];
+      break;
+
+    case 'admin_notification':
+      $message['subject'] = t('New Event Registration');
+      $message['body'][] = [
+        '#type' => 'markup',
+        '#markup' => $params['message'],
+      ];
+      break;
+  }
+}

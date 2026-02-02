@@ -1,0 +1,10 @@
+event_registration.settings:
+  type: config_object
+  label: 'Event Registration settings'
+  mapping:
+    admin_email:
+      type: email
+      label: 'Admin notification email'
+    enable_admin_notification:
+      type: boolean
+      label: 'Enable admin notifications'

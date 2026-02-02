@@ -1,8 +1,19 @@
-register_for_events:
+# ----------------------------------------------------------------
+# Permissions for Event Registration module
+# ----------------------------------------------------------------
+
+# Public: register for events
+register for events:
   title: 'Register for events'
   description: 'Allow users to register for events.'
 
-administer event registration:
-  title: 'Administer event registration'
-  description: 'Manage event configuration.'
+# Admin: full management
+administer event registrations:
+  title: 'Administer event registrations'
+  description: 'View, manage, and export event registrations.'
   restrict access: true
+
+# Admin: only view registrations
+view event registrations:
+  title: 'View event registrations'
+  description: 'View all event registrations'

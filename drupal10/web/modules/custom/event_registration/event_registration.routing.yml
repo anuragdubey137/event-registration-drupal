@@ -1,53 +1,65 @@
-# Admin configuration form
+# ----------------------------------------------------------------
+# Admin configuration form for events
+# ----------------------------------------------------------------
 event_registration.admin_form:
   path: '/admin/event-registration'
   defaults:
     _form: '\Drupal\event_registration\Form\EventConfigForm'
     _title: 'Event Configuration'
   requirements:
-    _permission: 'administer event registration'
+    _permission: 'administer event registrations'
 
+# ----------------------------------------------------------------
 # List all events (admin)
+# ----------------------------------------------------------------
 event_registration.event_list:
   path: '/admin/content/events'
   defaults:
     _controller: '\Drupal\event_registration\Controller\EventListController::list'
     _title: 'Events'
   requirements:
-    _permission: 'administer event registration'
+    _permission: 'administer event registrations'
 
+# ----------------------------------------------------------------
 # Event registration form (public)
+# ----------------------------------------------------------------
 event_registration.register_form:
   path: '/event-register'
   defaults:
     _form: '\Drupal\event_registration\Form\EventRegisterForm'
     _title: 'Register for Event'
   requirements:
-    _permission: 'register_for_events'
+    _permission: 'register for events'
 
-# List all registrations (admin)
-event_registration.registration_list:
-  path: '/admin/content/event-registrations'
+# ----------------------------------------------------------------
+# Admin: List all registrations with filter (AJAX)
+# ----------------------------------------------------------------
+event_registration.admin_registrations:
+  path: '/admin/event-registrations'
   defaults:
-    _controller: '\Drupal\event_registration\Controller\EventRegistrationListController::list'
+    _form: '\Drupal\event_registration\Form\RegistrationListFilterForm'
     _title: 'Event Registrations'
   requirements:
-    _permission: 'administer event registration'
+    _permission: 'view event registrations'
 
-# Edit registration
+# ----------------------------------------------------------------
+# Edit registration (admin)
+# ----------------------------------------------------------------
 event_registration.edit:
   path: '/admin/content/event-registration/{registration}/edit'
   defaults:
     _form: '\Drupal\event_registration\Form\EventRegistrationEditForm'
     _title: 'Edit Registration'
   requirements:
-    _permission: 'administer event registration'
+    _permission: 'administer event registrations'
 
-# Delete registration
+# ----------------------------------------------------------------
+# Delete registration (admin)
+# ----------------------------------------------------------------
 event_registration.delete:
   path: '/admin/content/event-registration/{registration}/delete'
   defaults:
     _form: '\Drupal\event_registration\Form\EventRegistrationDeleteForm'
     _title: 'Delete Registration'
   requirements:
-    _permission: 'administer event registration'
+    _permission: 'administer event registrations'

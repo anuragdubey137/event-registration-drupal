@@ -1,18 +1,23 @@
 <?php
 
 /**
+ * @file
+ * Install, schema, and uninstall hooks for the Event Registration module.
+ */
+
+/**
  * Tell Drupal about the database tables.
  */
 function event_registration_schema() {
   $schema = [];
 
-  // Event table (existing)
+  // Event table
   $schema['event_registration_event'] = [
     'description' => 'Stores event details',
     'fields' => [
       'id' => [
         'description' => 'Event ID',
-        'type' => 'serial',   // Auto-increment
+        'type' => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ],
@@ -57,8 +62,8 @@ function event_registration_schema() {
     'primary key' => ['id'],
   ];
 
-  // Registration table (new)
-  $schema['event_registration_user'] = [
+  // Registration table
+  $schema['event_registration_registration'] = [
     'description' => 'Stores users registering for events',
     'fields' => [
       'id' => [
@@ -73,19 +78,31 @@ function event_registration_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ],
-      'user_name' => [
-        'description' => 'Name of the user',
+      'name' => [
+        'description' => 'Full Name of user',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ],
-      'user_email' => [
-        'description' => 'Email of the user',
+      'email' => [
+        'description' => 'Email of user',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
       ],
-      'registered_on' => [
+      'college_name' => [
+        'description' => 'College Name',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'department' => [
+        'description' => 'Department',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ],
+      'created' => [
         'description' => 'Timestamp of registration',
         'type' => 'int',
         'unsigned' => TRUE,
@@ -102,15 +119,12 @@ function event_registration_schema() {
   return $schema;
 }
 
-
 /**
  * Implements hook_install().
  *
- * This runs once when the module is enabled for the first time.
- * Here we insert a sample event as default data.
+ * Insert a sample event after module installation.
  */
 function event_registration_install() {
-  // Insert a sample event.
   \Drupal::database()->insert('event_registration_event')
     ->fields([
       'event_name' => 'Sample Event',
@@ -121,4 +135,20 @@ function event_registration_install() {
       'created' => \Drupal::time()->getCurrentTime(),
     ])
     ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Clean up tables and config when module is uninstalled.
+ */
+function event_registration_uninstall() {
+  $connection = \Drupal::database();
+
+  // Drop tables
+  $connection->schema()->dropTable('event_registration_registration');
+  $connection->schema()->dropTable('event_registration_event');
+
+  // Remove saved configuration
+  \Drupal::configFactory()->getEditable('event_registration.settings')->delete();
 }

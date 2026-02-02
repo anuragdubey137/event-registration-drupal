@@ -1,0 +1,24 @@
+# ----------------------------------------------------------------
+# Admin menu links
+# ----------------------------------------------------------------
+
+event_registration.admin_config:
+  title: 'Event Configuration'
+  description: 'Manage event settings'
+  parent: system.admin_config_content
+  route_name: event_registration.admin_form
+  weight: 0
+
+event_registration.admin_events:
+  title: 'Manage Events'
+  description: 'View all events'
+  parent: system.admin_content
+  route_name: event_registration.event_list
+  weight: 1
+
+event_registration.admin_registrations:
+  title: 'Event Registrations'
+  description: 'View all registrations'
+  parent: system.admin_content
+  route_name: event_registration.admin_registrations
+  weight: 2
