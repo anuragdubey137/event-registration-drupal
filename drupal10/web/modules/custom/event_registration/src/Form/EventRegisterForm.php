@@ -5,6 +5,9 @@ namespace Drupal\event_registration\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Database\Database;
+use Drupal\Core\Mail\MailManagerInterface;
+use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Event Registration Form.
@@ -23,6 +26,7 @@ class EventRegisterForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
+
     // Permission check
     if (!$this->currentUser()->hasPermission('register_for_events')) {
       return [
@@ -32,95 +36,125 @@ class EventRegisterForm extends FormBase {
 
     $connection = Database::getConnection();
 
-    // Fetch distinct event categories
-    $categories = $connection->select('event_registration_event', 'e')
-      ->fields('e', ['event_category'])
-      ->distinct()
-      ->execute()
-      ->fetchCol();
-
-    $category_options = [];
-    foreach ($categories as $category) {
-      $category_options[$category] = $category;
-    }
-
-    // Full Name
-    $form['name'] = [
+    /* -------------------------
+     * BASIC USER FIELDS
+     * ------------------------- */
+    $form['user_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Full Name'),
       '#required' => TRUE,
     ];
 
-    // Email
-    $form['email'] = [
+    $form['user_email'] = [
       '#type' => 'email',
       '#title' => $this->t('Email Address'),
       '#required' => TRUE,
     ];
 
-    // College
-    $form['college'] = [
+    $form['college_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('College Name'),
       '#required' => TRUE,
     ];
 
-    // Department
     $form['department'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Department'),
       '#required' => TRUE,
     ];
 
-    // Event Category
+    /* -------------------------
+     * CATEGORY DROPDOWN
+     * ------------------------- */
+    $categories = $connection->select('event_registration_event', 'e')
+      ->fields('e', ['event_category'])
+      ->distinct()
+      ->execute()
+      ->fetchCol();
+
+    $category_options = ['' => $this->t('- Select Category -')];
+    foreach ($categories as $category) {
+      $category_options[$category] = $category;
+    }
+
     $form['event_category'] = [
       '#type' => 'select',
       '#title' => $this->t('Event Category'),
       '#options' => $category_options,
-      '#empty_option' => $this->t('- Select -'),
       '#required' => TRUE,
       '#ajax' => [
-        'callback' => '::updateEventDates',
+        'callback' => '::updateEventDate',
         'wrapper' => 'event-date-wrapper',
       ],
     ];
 
-    // Event Date wrapper
+    /* -------------------------
+     * EVENT DATE DROPDOWN
+     * ------------------------- */
     $form['event_date_wrapper'] = [
       '#type' => 'container',
       '#attributes' => ['id' => 'event-date-wrapper'],
     ];
 
+    $selected_category = $form_state->getValue('event_category');
+
+    $date_options = ['' => $this->t('- Select Event Date -')];
+    if ($selected_category) {
+      $dates = $connection->select('event_registration_event', 'e')
+        ->fields('e', ['event_date'])
+        ->condition('e.event_category', $selected_category)
+        ->distinct()
+        ->execute()
+        ->fetchCol();
+
+      foreach ($dates as $date) {
+        $date_options[$date] = $date;
+      }
+    }
+
     $form['event_date_wrapper']['event_date'] = [
       '#type' => 'select',
       '#title' => $this->t('Event Date'),
-      '#options' => $this->getEventDates($form_state->getValue('event_category')),
-      '#empty_option' => $this->t('- Select -'),
+      '#options' => $date_options,
       '#required' => TRUE,
       '#ajax' => [
-        'callback' => '::updateEventNames',
+        'callback' => '::updateEventName',
         'wrapper' => 'event-name-wrapper',
       ],
     ];
 
-    // Event Name wrapper
+    /* -------------------------
+     * EVENT NAME DROPDOWN
+     * ------------------------- */
     $form['event_name_wrapper'] = [
       '#type' => 'container',
       '#attributes' => ['id' => 'event-name-wrapper'],
     ];
 
-    $form['event_name_wrapper']['event_name'] = [
+    $selected_date = $form_state->getValue(['event_date_wrapper', 'event_date']);
+
+    $event_options = ['' => $this->t('- Select Event -')];
+    if ($selected_category && $selected_date) {
+      $events = $connection->select('event_registration_event', 'e')
+        ->fields('e', ['id', 'event_name'])
+        ->condition('e.event_category', $selected_category)
+        ->condition('e.event_date', $selected_date)
+        ->execute()
+        ->fetchAllKeyed(0, 1);
+
+      $event_options += $events;
+    }
+
+    $form['event_name_wrapper']['event_id'] = [
       '#type' => 'select',
       '#title' => $this->t('Event Name'),
-      '#options' => $this->getEventNames(
-        $form_state->getValue('event_category'),
-        $form_state->getValue('event_date')
-      ),
-      '#empty_option' => $this->t('- Select -'),
+      '#options' => $event_options,
       '#required' => TRUE,
     ];
 
-    // Submit
+    /* -------------------------
+     * SUBMIT
+     * ------------------------- */
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Register'),
@@ -129,105 +163,89 @@ class EventRegisterForm extends FormBase {
     return $form;
   }
 
-  /**
-   * AJAX: Update event dates.
-   */
-  public function updateEventDates(array &$form, FormStateInterface $form_state) {
+  /* -------------------------
+   * AJAX CALLBACKS
+   * ------------------------- */
+  public function updateEventDate(array &$form, FormStateInterface $form_state) {
     return $form['event_date_wrapper'];
   }
 
-  /**
-   * AJAX: Update event names.
-   */
-  public function updateEventNames(array &$form, FormStateInterface $form_state) {
+  public function updateEventName(array &$form, FormStateInterface $form_state) {
     return $form['event_name_wrapper'];
   }
 
-  /**
-   * Get event dates by category.
-   */
-  private function getEventDates($category) {
-    if (empty($category)) {
-      return [];
-    }
-
-    $dates = Database::getConnection()
-      ->select('event_registration_event', 'e')
-      ->fields('e', ['event_date'])
-      ->condition('event_category', $category)
-      ->orderBy('event_date', 'ASC')
-      ->execute()
-      ->fetchCol();
-
-    return array_combine($dates, $dates);
-  }
-
-  /**
-   * Get event names by category and date.
-   */
-  private function getEventNames($category, $date) {
-    if (empty($category) || empty($date)) {
-      return [];
-    }
-
-    $names = Database::getConnection()
-      ->select('event_registration_event', 'e')
-      ->fields('e', ['event_name'])
-      ->condition('event_category', $category)
-      ->condition('event_date', $date)
-      ->orderBy('event_name', 'ASC')
-      ->execute()
-      ->fetchCol();
-
-    return array_combine($names, $names);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
+  /* -------------------------
+   * VALIDATION
+   * ------------------------- */
   public function validateForm(array &$form, FormStateInterface $form_state) {
 
-    // Prevent special characters
-    foreach (['name', 'college', 'department'] as $field) {
-      if (preg_match('/[^a-zA-Z0-9 ]/', $form_state->getValue($field))) {
-        $form_state->setErrorByName($field, $this->t('Special characters are not allowed.'));
+    // No special characters in text fields
+    foreach (['user_name', 'college_name', 'department'] as $field) {
+      if (!preg_match('/^[a-zA-Z\s]+$/', $form_state->getValue($field))) {
+        $form_state->setErrorByName(
+          $field,
+          $this->t('Special characters are not allowed.')
+        );
       }
     }
 
-    // Prevent duplicate registration
-    $exists = Database::getConnection()
-      ->select('event_registration_registration', 'r')
-      ->fields('r', ['id'])
-      ->condition('email', $form_state->getValue('email'))
-      ->condition('event_name', $form_state->getValue('event_name'))
-      ->condition('event_date', $form_state->getValue('event_date'))
+    $email = $form_state->getValue('user_email');
+    $event_id = $form_state->getValue('event_id');
+
+    $connection = Database::getConnection();
+
+    // Fetch event date
+    $event_date = $connection->select('event_registration_event', 'e')
+      ->fields('e', ['event_date'])
+      ->condition('e.id', $event_id)
+      ->execute()
+      ->fetchField();
+
+    // Prevent duplicate registration (Email + Event Date)
+    $exists = $connection->select('event_registration_user', 'r')
+      ->condition('r.user_email', $email)
+      ->condition('r.event_date', $event_date)
+      ->countQuery()
       ->execute()
       ->fetchField();
 
     if ($exists) {
-      $form_state->setErrorByName('email', $this->t('You have already registered for this event.'));
+      $form_state->setErrorByName(
+        'user_email',
+        $this->t('You have already registered for this event.')
+      );
     }
   }
 
-  /**
-   * {@inheritdoc}
-   */
+  /* -------------------------
+   * SUBMIT HANDLER
+   * ------------------------- */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
-    Database::getConnection()->insert('event_registration_registration')
+    $connection = Database::getConnection();
+
+    // Get event date again
+    $event_date = $connection->select('event_registration_event', 'e')
+      ->fields('e', ['event_date'])
+      ->condition('e.id', $form_state->getValue('event_id'))
+      ->execute()
+      ->fetchField();
+
+    $connection->insert('event_registration_user')
       ->fields([
-        'event_name' => $form_state->getValue('event_name'),
-        'event_date' => $form_state->getValue('event_date'),
-        'event_category' => $form_state->getValue('event_category'),
-        'name' => $form_state->getValue('name'),
-        'email' => $form_state->getValue('email'),
-        'college' => $form_state->getValue('college'),
+        'user_name' => $form_state->getValue('user_name'),
+        'user_email' => $form_state->getValue('user_email'),
+        'college_name' => $form_state->getValue('college_name'),
         'department' => $form_state->getValue('department'),
-        'created' => \Drupal::time()->getRequestTime(),
+        'event_id' => $form_state->getValue('event_id'),
+        'event_date' => $event_date,
+        'registered_on' => time(),
       ])
       ->execute();
 
-    $this->messenger()->addStatus($this->t('You have successfully registered for the event.'));
+    $this->messenger()->addStatus(
+      $this->t('You have successfully registered for the event.')
+    );
   }
 
 }

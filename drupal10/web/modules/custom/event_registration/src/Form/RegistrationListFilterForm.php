@@ -24,12 +24,14 @@ class RegistrationListFilterForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    // Attach library for table styling
-    $form['#attached']['library'][] = 'event_registration/admin_styles';
+
+    // Wrap form for card-like UI
+    $form['#prefix'] = '<div class="event-registration-form">';
+    $form['#suffix'] = '</div>';
 
     $connection = Database::getConnection();
 
-    // Fetch unique event dates for the dropdown
+    // Fetch unique event dates
     $event_dates = $connection->select('event_registration_event', 'e')
       ->fields('e', ['event_date'])
       ->distinct()
@@ -46,161 +48,169 @@ class RegistrationListFilterForm extends FormBase {
       ],
     ];
 
-    // Fetch all events for selected date
-    $selected_date = $form_state->getValue('event_date') ?? '';
+    // Fetch events for selected date
+    $selected_date = $form_state->getValue('event_date');
 
     $events_query = $connection->select('event_registration_event', 'e')
-      ->fields('e', ['id', 'event_name']);
+      ->fields('e', ['event_name']);
 
-    if ($selected_date) {
+    if (!empty($selected_date)) {
       $events_query->condition('e.event_date', $selected_date);
     }
 
-    $events = $events_query->execute()->fetchAllKeyed(0, 1);
+    $events = $events_query->execute()->fetchCol();
 
     $form['event_name'] = [
       '#type' => 'select',
       '#title' => $this->t('Event Name'),
-      '#options' => ['' => $this->t('- All Events -')] + $events,
+      '#options' => ['' => $this->t('- All Events -')] + array_combine($events, $events),
       '#ajax' => [
         'callback' => '::filterAjaxCallback',
         'wrapper' => 'registration-table-wrapper',
       ],
     ];
 
-    // Total participants count
-    $participant_count = $this->getParticipantCount(
-      $form_state->getValue('event_date'),
-      $form_state->getValue('event_name')
-    );
-
+    // Participant count
     $form['participant_count'] = [
-      '#markup' => $this->t('<strong>Total Participants:</strong> @count', ['@count' => $participant_count]),
+      '#markup' => '<div class="participant-count"><strong>' .
+        $this->t('Total Participants:') .
+        '</strong> ' . $this->getParticipantCount(
+          $form_state->getValue('event_date'),
+          $form_state->getValue('event_name')
+        ) . '</div>',
     ];
 
-    // CSV Export button
+    // CSV Export
     $form['export_csv'] = [
       '#type' => 'submit',
       '#value' => $this->t('Export CSV'),
       '#submit' => ['::exportCsv'],
     ];
 
-    // Registration table container
+    // Table wrapper
     $form['registrations'] = [
       '#type' => 'container',
-      '#attributes' => ['id' => 'registration-table-wrapper', 'class' => ['registration-table-wrapper']],
+      '#attributes' => [
+        'id' => 'registration-table-wrapper',
+      ],
     ];
 
     $form['registrations']['table'] = $this->getRegistrationTable(
       $form_state->getValue('event_date'),
       $form_state->getValue('event_name')
     );
+    $form['#attached']['library'][] = 'event_registration/admin';
 
     return $form;
   }
 
   /**
-   * AJAX callback for filtering table.
+   * AJAX callback.
    */
-  public function filterAjaxCallback(array $form, FormStateInterface $form_state) {
+  public function filterAjaxCallback(array &$form, FormStateInterface $form_state) {
     return $form['registrations'];
   }
 
   /**
-   * Get total participants count for filtered event/date.
+   * Get total participants count.
    */
   private function getParticipantCount($event_date = '', $event_name = '') {
     $connection = Database::getConnection();
-    $query = $connection->select('event_registration_registration', 'r');
+
+    $query = $connection->select('event_registration_user', 'r');
     $query->addExpression('COUNT(r.id)', 'total');
     $query->innerJoin('event_registration_event', 'e', 'r.event_id = e.id');
 
     if (!empty($event_date)) {
-        $query->condition('e.event_date', $event_date);
+      $query->condition('e.event_date', $event_date);
     }
+
     if (!empty($event_name)) {
-        $query->condition('e.event_name', $event_name);
+      $query->condition('e.event_name', $event_name);
     }
 
     return (int) $query->execute()->fetchField();
   }
 
   /**
-   * Builds the registration table.
+   * Build registration table.
    */
   private function getRegistrationTable($event_date = '', $event_name = '') {
     $connection = Database::getConnection();
 
-    $query = $connection->select('event_registration_registration', 'r');
-    $query->fields('r', ['id', 'name', 'email', 'college_name', 'department', 'created', 'event_id']);
+    $query = $connection->select('event_registration_user', 'r');
+    $query->fields('r', [
+      'id',
+      'user_name',
+      'user_email',
+      'registered_on',
+      'event_id',
+    ]);
+
     $query->innerJoin('event_registration_event', 'e', 'r.event_id = e.id');
-    $query->fields('e', ['event_name', 'event_date', 'event_category']);
+    $query->fields('e', [
+      'event_name',
+      'event_date',
+      'event_category',
+    ]);
 
     if (!empty($event_date)) {
-        $query->condition('e.event_date', $event_date);
-    }
-    if (!empty($event_name)) {
-        $query->condition('e.event_name', $event_name);
+      $query->condition('e.event_date', $event_date);
     }
 
-    $query->orderBy('r.created', 'DESC');
+    if (!empty($event_name)) {
+      $query->condition('e.event_name', $event_name);
+    }
+
+    $query->orderBy('r.registered_on', 'DESC');
+
     $results = $query->execute()->fetchAll();
 
     $rows = [];
     foreach ($results as $row) {
-        $operations = [];
-        if ($this->currentUser()->hasPermission('administer event registrations')) {
-            $operations = [
-                'edit' => [
-                    'title' => $this->t('Edit'),
-                    'url' => Url::fromRoute('event_registration.edit', ['registration' => $row->id]),
+      $rows[] = [
+        $row->user_name,
+        $row->user_email,
+        $row->event_category,
+        $row->event_name,
+        $row->event_date,
+        date('d M Y, h:i A', $row->registered_on),
+        [
+          'data' => [
+            '#type' => 'operations',
+            '#links' => [
+              'delete' => [
+                'title' => $this->t('Delete'),
+                'url' => Url::fromRoute('event_registration.delete', [
+                  'registration' => $row->id,
+                ]),
+                'attributes' => [
+                  'class' => ['use-ajax', 'button', 'button--danger'],
+                  'data-dialog-type' => 'modal',
                 ],
-                'delete' => [
-                    'title' => $this->t('Delete'),
-                    'url' => Url::fromRoute('event_registration.delete', ['registration' => $row->id]),
-                    'attributes' => [
-                        'class' => ['use-ajax', 'button', 'button--danger'],
-                        'data-dialog-type' => 'modal',
-                        'data-dialog-options' => json_encode(['width' => 400]),
-                    ],
-                ],
-            ];
-        }
-
-        $rows[] = [
-            $row->name,
-            $row->email,
-            $row->college_name,
-            $row->department,
-            $row->event_category,
-            $row->event_name,
-            $row->event_date,
-            date('d M Y, h:i A', $row->created),
-            [
-                'data' => [
-                    '#type' => 'operations',
-                    '#links' => $operations,
-                ],
+              ],
             ],
-        ];
+          ],
+        ],
+      ];
     }
 
     return [
-        '#type' => 'table',
-        '#header' => [
-            $this->t('Name'),
-            $this->t('Email'),
-            $this->t('College'),
-            $this->t('Department'),
-            $this->t('Category'),
-            $this->t('Event Name'),
-            $this->t('Event Date'),
-            $this->t('Submitted On'),
-            $this->t('Operations'),
-        ],
-        '#rows' => $rows,
-        '#empty' => $this->t('No registrations found.'),
-        '#attributes' => ['class' => ['registration-table']],
+      '#type' => 'table',
+      '#header' => [
+        $this->t('Name'),
+        $this->t('Email'),
+        $this->t('Category'),
+        $this->t('Event Name'),
+        $this->t('Event Date'),
+        $this->t('Submitted On'),
+        $this->t('Operations'),
+      ],
+      '#rows' => $rows,
+      '#empty' => $this->t('No registrations found.'),
+      '#attributes' => [
+        'class' => ['registration-table'],
+      ],
     ];
   }
 
@@ -208,51 +218,48 @@ class RegistrationListFilterForm extends FormBase {
    * CSV Export handler.
    */
   public function exportCsv(array &$form, FormStateInterface $form_state) {
-    $event_date = $form_state->getValue('event_date');
-    $event_name = $form_state->getValue('event_name');
-
     $connection = Database::getConnection();
-    $query = $connection->select('event_registration_registration', 'r');
-    $query->fields('r', ['name', 'email', 'college_name', 'department', 'created']);
+
+    $query = $connection->select('event_registration_user', 'r');
+    $query->fields('r', ['user_name', 'user_email', 'registered_on']);
     $query->innerJoin('event_registration_event', 'e', 'r.event_id = e.id');
     $query->fields('e', ['event_name', 'event_date', 'event_category']);
-
-    if (!empty($event_date)) {
-        $query->condition('e.event_date', $event_date);
-    }
-    if (!empty($event_name)) {
-        $query->condition('e.event_name', $event_name);
-    }
 
     $results = $query->execute()->fetchAll();
 
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="registrations.csv"');
-    $output = fopen('php://output', 'w');
 
-    fputcsv($output, ['Name', 'Email', 'College', 'Department', 'Category', 'Event Name', 'Event Date', 'Submitted On']);
+    $output = fopen('php://output', 'w');
+    fputcsv($output, [
+      'Name',
+      'Email',
+      'Category',
+      'Event Name',
+      'Event Date',
+      'Submitted On',
+    ]);
 
     foreach ($results as $row) {
-        fputcsv($output, [
-            $row->name,
-            $row->email,
-            $row->college_name,
-            $row->department,
-            $row->event_category,
-            $row->event_name,
-            $row->event_date,
-            date('d M Y, h:i A', $row->created),
-        ]);
+      fputcsv($output, [
+        $row->user_name,
+        $row->user_email,
+        $row->event_category,
+        $row->event_name,
+        $row->event_date,
+        date('d M Y, h:i A', $row->registered_on),
+      ]);
     }
 
     fclose($output);
-    exit();
+    exit;
   }
 
   /**
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    // No submission needed; table is filtered via AJAX.
+    // Required by FormBase, not used here.
   }
+
 }

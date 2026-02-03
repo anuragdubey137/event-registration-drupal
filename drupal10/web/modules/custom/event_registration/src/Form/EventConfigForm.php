@@ -70,7 +70,6 @@ class EventConfigForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Save Event'),
     ];
-
     return $form;
   }
 

@@ -1,0 +1,84 @@
+/* === TEST: ADMIN CSS LOADED === */
+.event-registration-form {
+  border: 4px solid red !important;
+  padding: 16px;
+}
+
+.registration-table {
+  border: 3px solid blue !important;
+}
+
+/* Admin page wrapper */
+.event-registration-admin {
+  background: #f5f7fb;
+  padding: 24px;
+}
+
+/* Card container */
+.event-registration-card {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+/* Table */
+.event-registration-card table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+/* Table header */
+.event-registration-card thead th {
+  background: #f0f2f7;
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 2px solid #e1e4ee;
+}
+
+/* Table body */
+.event-registration-card tbody td {
+  padding: 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #e6e8f0;
+}
+
+/* Zebra rows */
+.event-registration-card tbody tr:nth-child(even) {
+  background: #fafbff;
+}
+
+/* Actions column */
+.event-registration-card .operations a {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.event-registration-card .operations a:hover {
+  background: #c0392b;
+}
+
+/* Empty message */
+.event-registration-empty {
+  padding: 24px;
+  text-align: center;
+  color: #777;
+  font-style: italic;
+}
+/* css/event-registration-admin.css */
+.event-registration-form {
+  border: 5px solid red !important;
+  background: #fff3cd !important;
+  padding: 20px !important;
+}
+
+.registration-table {
+  border: 3px solid blue !important;
+}
